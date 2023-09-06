@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Millikan-Versuch</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@500;700&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div id="container">
+            <div id="parameter">
+                <button id="spruehen">Sprühen</button>
+                <div id="auswahl">
+                    <div id="x1" class="ausgewählt">x1</div>
+                    <div id="x2">x2</div>
+                    <div id="x5">x5</div>
+                    <div id="x10">x10</div>
+                    <div id="x50">x50</div>
+                </div>
+
+                <div id="kondensator">
+                    <div id="kondensator_title">Kondensatorspannung</div>
+                    <div id="wert">U = 0V</div>
+                    <button id="einschalten">Einschalten</button>
+                    <input type="range" id="kondensator_spannung" min="0" max="500" value="0" step="1">
+                    <button id="umpolen">Umpolen</button>
+                </div>
+
+                <!-- Simulation zurücksetzen btn -->
+                <button id="reset">Simulation zurücksetzen</button>
+            </div>
+
+            <div id="leinwand">
+                <div id="mikroskop">
+                    <div id="radius"></div>
+                    <div id="linse">
+
+                    </div>
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+        <style>
+            body, html {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background-color: #e9e9e9;
+                font-family: 'Open Sans', sans-serif;
+            }
+
+            #container {
+                width: 900px;
+                height: 600px;
+                background-color: #fff;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border-radius: 10px;
+                box-shadow: 0 0 10px -3px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+            }
+
+            #container #parameter {
+                width: 260px;
+                height: 560px;
+                background-color: #fff;
+                border-right: 1px solid #e9e9e9;
+                padding: 20px;
+            }
+
+            #container #parameter button {
+                width: 100%;
+                height: 40px;
+                background-color: #f5f5f5;
+                border: 1px solid #e9e9e9;
+                border-radius: 5px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            #container #parameter button:hover {
+                background-color: #e9e9e9;
+            }
+
+            #container #parameter #auswahl {
+                width: 100%;
+                display: inline-flex;
+                margin-top: 5px;
+                gap: 5px;
+            }
+
+            #container #parameter #auswahl div {
+                width: 100%;
+                height: 40px;
+                background-color: #f5f5f5;
+                border: 1px solid #e9e9e9;
+                border-radius: 5px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #container #parameter #auswahl div:hover {
+                background-color: #e9e9e9;
+            }
+
+            #container #parameter #auswahl div.ausgewählt {
+                background-color: #e0e0e0;
+            }
+
+            #container #parameter #kondensator {
+                width: calc(100% - 20px);
+                padding-top: 40px;
+                border: 1px solid #e9e9e9;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding: 10px;
+                margin-bottom: 10px;
+                /* background-color: #fafafa; */
+            }
+
+            #container #parameter #kondensator #kondensator_title {
+                font-size: 17px;
+                font-weight: 500;
+                color: #000;
+                margin-bottom: 10px;
+            }
+
+            #container #parameter #kondensator button {
+                margin-bottom: 5px;
+            }
+
+            #container #parameter #kondensator input[type="range"] {
+                width: calc(100% - 2px);
+                height: 10px;
+                -webkit-appearance: none;
+                background-color: #f5f5f5;
+                border: 1px solid #e9e9e9;
+                border-radius: 5px;
+                outline: none;
+                margin: 0;
+                margin-bottom: 10px;
+                margin-top: 10px;
+                transition: all 0.3s ease;
+            }
+
+            #container #parameter #kondensator #wert {
+                font-size: 20px;
+                font-weight: 700;
+                color: #000;
+                text-align: center;
+                background-color: #f5f5f5;
+                width: max-content;
+                padding: 5px 10px;
+                border-radius: 5px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #e9e9e9;
+            }
+
+            #container #leinwand {
+                position: absolute;
+                top: 0;
+                left: 300px;
+                right: 0;
+                bottom: 0;
+                padding: 20px;
+            }
+
+            #container #leinwand #mikroskop {
+                width: 100%;
+                height: 100%;
+                background-color: #000000;
+                border-radius: 10px;
+                display: grid;
+                place-items: center;
+            }
+
+            #container #leinwand #mikroskop #radius {
+                position: absolute;
+                top: 20px;
+                left: 30px;
+                font-size: 20px;
+                font-weight: 700;
+                color: #fff;
+                z-index: 20;
+            }
+
+            #container #leinwand #mikroskop #linse {
+                width: 97%;
+                aspect-ratio: 1/1;
+                background-color: #FFC888;
+                border-radius: 50%;
+                position: relative;
+                overflow: hidden;
+                rotate: 180deg;
+                z-index: 10;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-image: url("data:image/png;base64,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NAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirBnh/qx56y/6QQI7Cfgx573u7nA2u/mh8Da8OhWJkAgKiCwovyR4QIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwp4d6sees/6mEyCwn4Afe97v5gJrv5sfAmvDo1uZAIGogMCK8keGC6wIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIe3aoH3vO+ptOgMB+An7seb+bC6z9bn4IrA2PbmUCBKICAivKHxkusCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLsY0O/zzzpdrt9nPk7f0OAAAEC5wSez+fPub88/p38O38WFhBY4QO8OF5gvQjozwkQIHCFgMC6QnmtGQJrrXt4GwIECBAgQKBAQGAVHNEKBAgQIECAwFoCAmute3gbAgQIECBAoEBAYBUc0QoECBAgQIDAWgICa617eBsCBAgQIECgQEBgFRzRCgQIECBAgMBaAgJrrXt4GwIECBAgQKBAQGAVHNEKBAgQIECAwFoCAmute3gbAgQIECBAoEBAYBUc0QoECBAgQIDAWgICa617eBsCBAgQIECgQEBgFRzRCgQIECBAgMBaAgJrrXtc8jb3+/3zkkGGECBAgMCvwOPx+EKxl4DA2uvev9sKrA2PbmUCBKICAivKHxkusCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLs2aF+7DnrbzoBAvsJ+LHn/W4usPa7+SGwNjy6lQkQiAoIrCh/ZLjAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirBnh/qx56y/6QQI7Cfgx573u7nA2u/mh8Da8OhWJkAgKiCwovyR4QIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwp4d6sees/6mEyCwn4Afe97v5gJrv5sfAmvDo1uZAIGogMCK8keGC6wIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwI+9jQ7zNPut1uH2f+zt8QIECAwDmB5/P5c+4vj38n/86fhQUEVvgAL44XWC8C+nMCBAhcISCwrlBea4bAWuse3oYAAQIECBAoEBBYBUe0AgECBAgQILCWgMBa6x7ehgABAgQIECgQEFgFR7QCAQIECBAgsJaAwFrrHt6GAAECBAgQKBAQWAVHtAIBAgQIECCwloDAWuse3oYAAQIECBAoEBBYBUe0AgECBAgQILCWgMBa6x7ehgABAgQIECgQEFgFR7QCAQIECBAgsJaAwFrrHt6GAAECBAgQKBAQWAVHtAIBAgQIECCwloDAWusel7zN/X7/vGSQIQQIECDwK/B4PL5Q7CUgsPa69++2AmvDo1uZAIGogMCK8keGC6wIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIe3aoH3vO+ptOgMB+An7seb+bC6z9bn4IrA2PbmUCBKICAivKHxkusCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLs2aF+7DnrbzoBAvsJ+LHn/W4usPa7+SGwNjy6lQkQiAoIrCh/ZLjAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirBnh/qx56y/6QQI7Cfgx573u7nA2u/mh8Da8OhWJkAgKiCwovyR4QIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwj429PvMk26328eZv/M3BAgQIHBO4Pl8/pz7y+Pfyb/zZ2EBgRU+wIvjBdaLgP6cAAECVwgIrCuU15ohsNa6h7chQIAAAQIECgQEVsERrUCAAAECBAisJSCw1rqHtyFAgAABAgQKBARWwRGtQIAAAQIECKwlILDWuoe3IUCAAAECBAoEBFbBEa1AgAABAgQIrCUgsNa6h7chQIAAAQIECgQEVsERrUCAAAECBAisJSCw1rqHtyFAgAABAgQKBARWwRGtQIAAAQIECKwlILDWuoe3IUCAAAECBAoEBFbBEa1AgAABAgQIrCUgsNa6xyVvc7/fPy8ZZAgBAgQI/Ao8Ho8vFHsJCKy97v27rcDa8OhWJkAgKiCwovyR4QIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwp4d6sees/6mEyCwn4Afe97v5gJrv5sfAmvDo1uZAIGogMCK8keGC6wIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIe3aoH3vO+ptOgMB+An7seb+bC6z9bn4IrA2PbmUCBKICAivKHxkusCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLs2aF+7DnrbzoBAvsJ+LHn/W4usPa7+SGwNjy6lQkQiAoIrCh/ZLjAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirCPDf0+86Tb7fZx5u/8DQECBAicE3g+nz/n/vL4d/Lv/FlYQGCFD/DieIH1IqA/J0CAwBUCAusK5bVmCKy17uFtCBAgQIAAgQIBgVVwRCsQIECAAAECawkIrLXu4W0IECBAgACBAgGBVXBEKxAgQIAAAQJrCQiste7hbQgQIECAAIECAYFVcEQrECBAgAABAmsJCKy17uFtCBAgQIAAgQIBgVVwRCsQIECAAAECawkIrLXu4W0IECBAgACBAgGBVXBEKxAgQIAAAQJrCQiste7hbQgQIECAAIECAYFVcEQrECBAgAABAmsJCKy17nHJ29zv989LBhlCgAABAr8Cj8fjC8VeAgJrr3v/biuwNjy6lQkQiAoIrCh/ZLjAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirBnh/qx56y/6QQI7Cfgx573u7nA2u/mh8Da8OhWJkAgKiCwovyR4QIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwp4d6sees/6mEyCwn4Afe97v5gJrv5sfAmvDo1uZAIGogMCK8keGC6wIu6EECBAgQIBAs4DAar6u3QgQIECAAIGIgMCKsBtKgAABAgQINAsIrObr2o0AAQIECBCICAisCLuhBAgQIECAQLOAwGq+rt0IECBAgACBiIDAirAbSoAAAQIECDQLCKzm69qNAAECBAgQiAgIrAi7oQQIECBAgECzgMBqvq7dCBAgQIAAgYiAwIqwG0qAAAECBAg0Cwis5uvajQABAgQIEIgICKwIe3aoH3vO+ptOgMB+An7seb+bC6z9bn4IrA2PbmUCBKICAivKHxkusCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuw8fCaLAAACiElEQVSGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CwgsJqvazcCBAgQIEAgIiCwIuyGEiBAgAABAs0CAqv5unYjQIAAAQIEIgICK8JuKAECBAgQINAsILCar2s3AgQIECBAICIgsCLshhIgQIAAAQLNAgKr+bp2I0CAAAECBCICAivCbigBAgQIECDQLCCwmq9rNwIECBAgQCAiILAi7IYSIECAAAECzQICq/m6diNAgAABAgQiAgIrwm4oAQIECBAg0CzwP09N9FnOQab+AAAAAElFTkSuQmCC");
+                background-size: 100% 100%;
+            }
+
+            #container #leinwand #mikroskop #linse .partikel {
+                width: 10px;
+                height: 10px;
+                background-color: #ffffff;
+                border-radius: 50%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                animation: fadeIn 0.5s ease forwards;
+            }
+
+            #container #leinwand #mikroskop #linse .partikel.selected {
+                background-color: #ff0000;
+            }
+
+            @keyframes fadeIn {
+                0% {
+                    opacity: 0;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            #container #leinwand #mikroskop #canvas {
+                width: 600px;
+                height: 600px;
+                position: absolute;
+                top: 0;
+                z-index: 5;
+                left: 0;
+            }
+        </style>
+        <script>
+            // MILLIKAN-Versuch - Schwebemethode (Simulation) 
+            // 06.09.2023
+
+            // ****************************************************************************
+            // * Autor: Mateo Meillon - Github. @maettis                                  *
+            // * Dieses Programm darf - auch in veränderter Form - für nicht-kommerzielle *
+            // * Zwecke verwendet und weitergegeben werden, solange dieser Hinweis nicht  *
+            // * entfernt wird.                                                           *
+            // ****************************************************************************
+            let x = 1;
+            let SpannungWert = 0;
+            let SpannungEin = 0;
+            let SpannungPolung = +1;
+
+            const spruehen = document.getElementById("spruehen");
+
+            const einschalten = document.getElementById("einschalten")
+            einschalten.addEventListener("click", () => {
+                SpannungEin = !SpannungEin;
+
+                zeichne();
+
+                if (SpannungEin)
+                    einschalten.innerHTML = "Ausschalten";
+                else
+                    einschalten.innerHTML = "Einschalten";
+            });
+
+            function updateSpannung() {
+                console.log(SpannungPolung, SpannungWert);
+                document.getElementById("wert").innerHTML = "U = " + (SpannungPolung * parseInt(SpannungWert)) + "V";
+            }
+
+            const kondensator_spannung = document.getElementById("kondensator_spannung");
+            kondensator_spannung.addEventListener("input", () => {
+                SpannungWert = kondensator_spannung.value
+
+                zeichne();
+                updateSpannung();
+            });
+
+            const umpolen = document.getElementById("umpolen");
+            umpolen.addEventListener("click", () => {
+                SpannungPolung = -SpannungPolung;
+                
+                zeichne();
+                updateSpannung();
+            });
+
+            function updateX(newx) {
+                x = newx;
+                document.getElementById("x1").classList.remove("ausgewählt");
+                document.getElementById("x2").classList.remove("ausgewählt");
+                document.getElementById("x5").classList.remove("ausgewählt");
+                document.getElementById("x10").classList.remove("ausgewählt");
+                document.getElementById("x50").classList.remove("ausgewählt");
+                document.getElementById("x" + x).classList.add("ausgewählt");
+            }
+
+            const x1 = document.getElementById("x1").addEventListener("click", () => { updateX(1); });
+            const x2 = document.getElementById("x2").addEventListener("click", () => { updateX(2); });
+            const x3 = document.getElementById("x5").addEventListener("click", () => { updateX(5); });
+            const x4 = document.getElementById("x10").addEventListener("click", () => { updateX(10); });
+            const x5 = document.getElementById("x50").addEventListener("click", () => { updateX(50); });
+        
+            var eta_Luft = 1.81E-5;			// in N*s / m^2
+            var p = 1013.0;				// hPa
+            var b = 6.33E-5;			// hPa*m
+            var A = b/p;				// = 6.25E-8 m
+            var rho_Oel = 875.3;			// kg / m^3
+            var rho_Luft = 1.29;			// kg / m^3
+            var Delta_rho = rho_Oel - rho_Luft;	// = 874 kg / m^3
+            var d = 6.00E-3;			// m
+            var s = 5.33E-5;			// m
+            var e = 1.602E-19;			// A*s
+            var g = 9.81;				// m / s^2;
+            let t = 0;
+
+            const reset = document.getElementById("reset");
+            reset.addEventListener("click", () => {
+                t = 0;
+                Tropfen = [];
+                linse.innerHTML = "";
+                SpannungWert = 0;
+                SpannungEin = 0;
+                SpannungPolung = +1;
+                updateSpannung();
+                einschalten.innerHTML = "Einschalten";
+                kondensator_spannung.value = 0;
+                x = 1;
+                updateX(1);
+            });
+
+            function updateRadius (radius) {
+                document.getElementById("radius").innerHTML = "r ~ " + radius;
+            }
+
+            const linse = document.getElementById("linse");
+
+            let Tropfen = [];
+
+            function createPartikel() {
+                let partikel = document.createElement("div");
+                partikel.classList.add("partikel");
+
+                const i = Tropfen.length;
+                Tropfen[i] = [];
+
+                Tropfen[i][0] = Math.random() * 100;				// x: x-Koordinate
+                Tropfen[i][1] = 0;						// y: y-Koordinate
+                Tropfen[i][2] = 0;						// v: Geschwindigkeit in y-Richtung
+                var r = Math.random() * (8.0E-7) + 1.0E-7; 			// r: Radius
+                Tropfen[i][3] = Delta_rho*4/3*Math.PI*Math.pow(r,3);		// m: Masse Delta_rho * 4/3 * pi * r^3
+                Tropfen[i][4] = Tropfen[i][3]*g;				// FG: Gewichtskraft m * g
+                var q = -(Math.floor(Math.random()*7))*e; 			// q: Ladung
+                Tropfen[i][5] = q/d;						// Faktor für Elektrische Kraft: q/d (*U)
+                var eta = eta_Luft / (1+A/r);					// eta: korrigierte Zähigkeit der Luft
+                Tropfen[i][6] = -6*Math.PI*eta*r;				// Faktor für Reibungskraft: -6 * pi * eta * r (*v)
+                Tropfen[i][7] = partikel;                                 // Partikel
+
+                partikel.style.left = Tropfen[i][0] + "%";
+
+                partikel.addEventListener("click", () => {
+                    document.querySelectorAll(".partikel").forEach((partikel) => {
+                        partikel.classList.remove("selected");
+                    });
+                    updateRadius(r.toExponential(2));
+                    partikel.classList.add("selected");
+                });
+
+                
+                linse.appendChild(partikel);
+            } 
+
+            spruehen.addEventListener("click", () => {
+                for (let i = 0; i < x; i++) {
+                    createPartikel();
+                }
+            });
+
+            function zeichne () {
+                for (var i=0; i < Tropfen.length; i++) {
+                    if (Tropfen[i][1] >= 0) {
+                        var partikel = Tropfen[i][7];
+                        partikel.style.top = (Tropfen[i][1]) * 200000 + "px";
+                        partikel.style.left = Tropfen[i][0] + "%";
+                    }
+                }
+            }
+
+            function animate(tm_alt) {
+                tm_neu = (new Date()).getTime();
+                dt = (tm_neu - tm_alt) / 1000;
+                t = t + dt;
+
+                if (Tropfen.length == 0)
+                    return requestAnimFrame(function() {animate(tm_neu); });
+
+                var a = 0;
+                for (var i=0; i < Tropfen.length; i++) {
+                    if (Tropfen[i][1] >= 0) {
+                        a = (Tropfen[i][4] + Tropfen[i][5]*SpannungEin*SpannungPolung*SpannungWert + Tropfen[i][6]*Tropfen[i][2])/Tropfen[i][3];	// a = (FG+Fel+FR)/m
+                        Tropfen[i][2] +=  0.0001 * a * dt;
+                        Tropfen[i][1] += Tropfen[i][2] * dt;
+                        if (Tropfen[i][1] > 600/10*s || Tropfen[i][1] < 0)
+				            Tropfen[i][1] = -1;
+                    }
+                }
+                zeichne ();
+                requestAnimFrame(function() {animate(tm_neu);});
+            }
+
+            window.requestAnimFrame = (function(callback) {return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) {window.setTimeout(callback, 1000 / 60);};})();
+            animate((new Date()).getTime());
+        </script>
+    </body>
+</html>
